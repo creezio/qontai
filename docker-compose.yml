@@ -37,6 +37,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL:-postgresql://qontai:qontai@postgres:5432/qontai}
+      NEXT_PUBLIC_N8N_BASE_URL: ${NEXT_PUBLIC_N8N_BASE_URL:-${N8N_BASE_URL:-}}
 
 volumes:
   qontai_pg:
