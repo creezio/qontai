@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: qontai-pg
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5434:5432"
+    environment:
+      POSTGRES_USER: qontai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-qontai}
+      POSTGRES_DB: qontai
+    volumes:
+      - qontai_pg:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qontai -d qontai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      args:
+        GIT_COMMIT: ${GIT_COMMIT:-unknown}
+        GIT_REF: ${GIT_REF:-unknown}
+        GIT_BUILD_TIME: ${GIT_BUILD_TIME:-unknown}
+    container_name: qontai
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3014:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://qontai:qontai@postgres:5432/qontai}
+
+volumes:
+  qontai_pg:
+
