@@ -4,16 +4,17 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 if git remote get-url origin >/dev/null 2>&1; then
-  if ! git config user.email >/dev/null 2>&1 || ! git config user.name >/dev/null 2>&1; then
-    echo >&2 "Erreur : configurez l’auteur Git dans ce dépôt, par ex."
-    echo >&2 "  git config user.email \"vous@creez.io\" && git config user.name \"Votre nom\""
-    exit 1
-  fi
+  GIT_AUTHOR_NAME="${GIT_AUTHOR_NAME:-$(git config user.name 2>/dev/null || true)}"
+  GIT_AUTHOR_EMAIL="${GIT_AUTHOR_EMAIL:-$(git config user.email 2>/dev/null || true)}"
+  if [[ -z "${GIT_AUTHOR_NAME}" ]]; then GIT_AUTHOR_NAME="qontai-deploy"; fi
+  if [[ -z "${GIT_AUTHOR_EMAIL}" ]]; then GIT_AUTHOR_EMAIL="qontai-deploy@localhost"; fi
+
   BRANCH="$(git rev-parse --abbrev-ref HEAD)"
   if [[ -n "$(git status --porcelain 2>/dev/null)" ]]; then
     git add -A
     git restore --staged .env 2>/dev/null || true
-    git commit -m "chore: déploiement $(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+    git -c user.name="$GIT_AUTHOR_NAME" -c user.email="$GIT_AUTHOR_EMAIL" \
+      commit -m "chore: déploiement $(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
   fi
   git push origin "$BRANCH"
 fi
